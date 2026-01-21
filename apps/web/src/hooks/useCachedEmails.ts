@@ -63,7 +63,7 @@ export function useCachedEmails({
                 throw new Error(data.error);
             }
 
-            const results = Array.isArray(data) ? data : [data];
+            const results = data.emails || (Array.isArray(data) ? data : [data]);
             const formatted = results.map((e: any, idx: number) => ({
                 ...e,
                 id: e.id || `msg-${Date.now()}-${idx}`,
