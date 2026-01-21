@@ -58,3 +58,6 @@ public/workbox-*.js
 # Python
 __pycache__/
 *.pyc
+
+# Local scripts (not part of deployed app)
+/scripts/
