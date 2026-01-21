@@ -1,0 +1,19 @@
+{
+  "name": "@outlook-client-manager/scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "import-accounts": "npx tsx import-accounts.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "pg": "^8.17.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/pg": "^8.16.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}

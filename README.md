@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Outlook Client Manager
+
+A multi-account Outlook email management dashboard with offline caching support.
+
+## Features
+
+- Multi-account Outlook email management
+- Email fetching via Microsoft Graph API
+- Offline email caching with IndexedDB
+- Mobile-responsive UI with slide-out sidebar
+- Recently Accessed / Inactive account categorization
+- Copy email address functionality
+
+## Tech Stack
+
+- **Frontend**: Next.js 16, React 19, Tailwind CSS 4
+- **Database**: PostgreSQL (Neon) with Prisma ORM
+- **Caching**: IndexedDB for offline support
+- **Email API**: Microsoft Graph API via Python scripts
+
+## Project Structure (Monorepo)
+
+```
+outlook-client-manager/
+├── apps/
+│   └── web/              # Next.js web application
+│       ├── src/
+│       ├── prisma/
+│       └── public/
+├── scripts/              # Utility scripts
+│   ├── import-accounts.ts
+│   ├── email_fetcher.py
+│   └── delete_email.py
+├── package.json          # Root workspace config
+└── README.md
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- Python 3.10+
+- PostgreSQL database (we use Neon)
+
+### Installation
 
 ```bash
+# Install all dependencies
+npm install
+
+# Set up environment variables
+cp apps/web/.env.example apps/web/.env
+# Edit apps/web/.env with your DATABASE_URL
+
+# Run database migrations
+cd apps/web && npx prisma migrate dev
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Import Accounts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Create accounts.txt with format: email:password:refresh_token:client_id
+cd scripts
+cp ../apps/web/.env .env
+npm install
+npm run import-accounts
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment (Vercel)
 
-## Learn More
+1. Connect your GitHub repository to Vercel
+2. Set **Root Directory** to `apps/web`
+3. Add environment variable `DATABASE_URL`
+4. Deploy!
 
-To learn more about Next.js, take a look at the following resources:
+## License
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT

@@ -33,7 +33,8 @@ export async function createAccount(data: Omit<OutlookClient, 'id' | 'status'>):
             clientId: data.client_id,
             refreshToken: data.refresh_token,
             status: 'connected',
-            lastSynced: new Date()
+            lastSynced: new Date(),
+            lastAccessed: new Date()
         }
     });
 
