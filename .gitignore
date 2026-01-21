@@ -39,3 +39,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# Screenshots
+*.png
+
+# Sensitive files
+accounts.txt
+
+# Claude Code
+.claude/
+
+# PWA generated files
+public/sw.js
+public/workbox-*.js
+
+# Python
+__pycache__/
+*.pyc
