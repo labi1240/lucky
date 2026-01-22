@@ -6,6 +6,7 @@ export interface OutlookClient {
     status: 'connected' | 'error' | 'syncing';
     last_synced?: string;
     last_accessed?: string;
+    is_favorite?: boolean;
 }
 
 export interface EmailMessage {

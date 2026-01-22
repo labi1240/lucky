@@ -18,7 +18,8 @@ export async function getAllAccounts(): Promise<OutlookClient[]> {
             refresh_token: account.refreshToken,
             status: account.status as 'connected' | 'error' | 'syncing',
             last_synced: account.lastSynced.toISOString(),
-            last_accessed: account.lastAccessed?.toISOString()
+            last_accessed: account.lastAccessed?.toISOString(),
+            is_favorite: account.isFavorite
         }));
     } catch (error) {
         console.error('Error fetching accounts:', error);
@@ -75,6 +76,15 @@ export async function updateLastAccessed(id: string): Promise<void> {
         where: { id },
         data: {
             lastAccessed: new Date()
+        }
+    });
+}
+
+export async function toggleFavorite(id: string, isFavorite: boolean): Promise<void> {
+    await prisma.outlookAccount.update({
+        where: { id },
+        data: {
+            isFavorite
         }
     });
 }

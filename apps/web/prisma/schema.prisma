@@ -11,15 +11,16 @@ datasource db {
 }
 
 model OutlookAccount {
-  id           String   @id @default(cuid())
-  userEmail    String   @unique @map("user_email")
-  clientId     String   @map("client_id")
-  refreshToken String   @map("refresh_token")
-  status       String   @default("connected")
-  lastSynced   DateTime @default(now()) @map("last_synced")
+  id           String    @id @default(cuid())
+  userEmail    String    @unique @map("user_email")
+  clientId     String    @map("client_id")
+  refreshToken String    @map("refresh_token")
+  status       String    @default("connected")
+  lastSynced   DateTime  @default(now()) @map("last_synced")
   lastAccessed DateTime? @map("last_accessed")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  isFavorite   Boolean   @default(false) @map("is_favorite")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("outlook_accounts")
 }

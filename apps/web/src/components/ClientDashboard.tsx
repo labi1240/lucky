@@ -1,6 +1,7 @@
 import React from 'react';
 import { OutlookClient } from '../app/types';
-import { RefreshCw, AlertCircle, CheckCircle, ExternalLink, Plus, Clock } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle, ExternalLink, Plus, Clock, Star } from 'lucide-react';
+import { toggleFavorite } from '../app/actions/accountActions';
 
 interface ClientDashboardProps {
     clients: OutlookClient[];
@@ -9,17 +10,26 @@ interface ClientDashboardProps {
 }
 
 export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clients, onSelectClient, onAddClient }) => {
-    // Split into recent and inactive (accounts with no last_accessed are inactive)
+    // 1. Separate Favorites
+    const favoriteAccounts = clients.filter(c => c.is_favorite);
+
+    // 2. Filter remaining for Recent/Inactive to avoid duplication? 
+    // Usually favorites are also "Recent" or "Inactive". 
+    // Let's SHOW them in both places or exclude them?
+    // Exclude them from other lists for cleaner UI
+    const nonFavoriteClients = clients.filter(c => !c.is_favorite);
+
+    // Split valid non-favorites into recent and inactive
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const recentAccounts = clients.filter(client => {
+    const recentAccounts = nonFavoriteClients.filter(client => {
         if (!client.last_accessed) return false;
         const lastTime = new Date(client.last_accessed);
         return lastTime > sevenDaysAgo;
     });
 
-    const inactiveAccounts = clients.filter(client => {
+    const inactiveAccounts = nonFavoriteClients.filter(client => {
         if (!client.last_accessed) return true;
         const lastTime = new Date(client.last_accessed);
         return lastTime <= sevenDaysAgo;
@@ -28,22 +38,20 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clients, onSel
     const ClientCard = ({ client, isInactive }: { client: OutlookClient; isInactive?: boolean }) => (
         <div
             key={client.id}
-            className={`rounded-xl border shadow-sm hover:shadow-md transition-shadow cursor-pointer group ${
-                isInactive
-                    ? 'bg-slate-50 border-slate-200 opacity-70 hover:opacity-100'
-                    : 'bg-white border-slate-200'
-            }`}
+            className={`rounded-xl border shadow-sm hover:shadow-md transition-shadow cursor-pointer group ${isInactive
+                ? 'bg-slate-50 border-slate-200 opacity-70 hover:opacity-100'
+                : 'bg-white border-slate-200'
+                }`}
             onClick={() => onSelectClient(client.id)}
         >
             <div className="p-5">
                 <div className="flex justify-between items-start mb-4">
-                    <div className={`p-2 rounded-lg ${
-                        isInactive
-                            ? 'bg-slate-100 text-slate-400'
-                            : client.status === 'connected'
-                                ? 'bg-green-50 text-green-600'
-                                : 'bg-amber-50 text-amber-600'
-                    }`}>
+                    <div className={`p-2 rounded-lg ${isInactive
+                        ? 'bg-slate-100 text-slate-400'
+                        : client.status === 'connected'
+                            ? 'bg-green-50 text-green-600'
+                            : 'bg-amber-50 text-amber-600'
+                        }`}>
                         {isInactive ? (
                             <Clock className="w-5 h-5" />
                         ) : client.status === 'connected' ? (
@@ -52,9 +60,34 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clients, onSel
                             <AlertCircle className="w-5 h-5" />
                         )}
                     </div>
-                    <button className="text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ExternalLink className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            className={`transition-colors p-1 rounded-full ${client.is_favorite
+                                ? 'text-amber-400 hover:text-amber-500 bg-amber-50'
+                                : 'text-slate-400 hover:text-amber-400 hover:bg-slate-100'}`}
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                // Optimistic UI update could happen here if parent handles it, 
+                                // but for now we rely on server action + parent refresh
+                                await toggleFavorite(client.id, !client.is_favorite);
+                                // Trigger a reload via parent-passed callback if available? 
+                                // Since we don't have a callback to refresh data, we might need to 
+                                // rely on Next.js Server Actions router.refresh() if this was a server component,
+                                // but this is a Client Component.
+                                // We need to trigger the parent's `loadAccounts`.
+                                // Let's just reload the page for now or assume parent passes a refresh?
+                                // Actually, `onSelectClient(null)` triggers a reload in parent.
+                                // A bit hacky but we can call onSelectClient(null) to refresh.
+                                onSelectClient(null);
+                            }}
+                            title={client.is_favorite ? "Unpin account" : "Pin account"}
+                        >
+                            <Star className={`w-4 h-4 ${client.is_favorite ? 'fill-current' : ''}`} />
+                        </button>
+                        <button className="text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ExternalLink className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
 
                 <h3 className={`text-lg font-semibold truncate ${isInactive ? 'text-slate-600' : 'text-slate-900'}`}>
@@ -107,6 +140,23 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clients, onSel
                 </div>
             ) : (
                 <div className="space-y-8">
+                    {/* Favorites Section */}
+                    {favoriteAccounts.length > 0 && (
+                        <section>
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
+                                <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                                    Pinned Accounts ({favoriteAccounts.length})
+                                </h2>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {favoriteAccounts.map(client => (
+                                    <ClientCard key={client.id} client={client} isInactive={false} />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
                     {/* Recently Accessed Section */}
                     {recentAccounts.length > 0 && (
                         <section>
