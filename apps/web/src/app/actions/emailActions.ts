@@ -1,5 +1,7 @@
 'use server';
 
+import { updateAccountSyncTime } from './accountActions';
+
 interface EmailResult {
     from: string;
     to: string[];
@@ -95,7 +97,8 @@ async function getAccessToken(clientId: string, refreshToken: string): Promise<{
 export async function fetchEmails(
     clientId: string,
     refreshToken: string,
-    userEmail: string
+    userEmail: string,
+    accountId: string
 ): Promise<FetchEmailsResponse> {
     // Get access token
     const { token: accessToken, error: tokenError } = await getAccessToken(clientId, refreshToken);
@@ -140,6 +143,9 @@ export async function fetchEmails(
             defects: [],
             original_object: msg as unknown as Record<string, unknown>
         }));
+
+        // Update sync time in database
+        await updateAccountSyncTime(accountId);
 
         // Return all emails
         return { emails };

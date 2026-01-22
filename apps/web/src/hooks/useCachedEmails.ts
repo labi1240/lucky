@@ -57,7 +57,7 @@ export function useCachedEmails({
     // Fetch emails from network
     const fetchFromNetwork = useCallback(async (): Promise<EmailMessage[] | null> => {
         try {
-            const data: any = await fetchEmailsAction(clientId, refreshToken, userEmail);
+            const data: any = await fetchEmailsAction(clientId, refreshToken, userEmail, accountId);
 
             if (data.error) {
                 throw new Error(data.error);

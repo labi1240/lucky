@@ -36,12 +36,14 @@ export default function Home() {
     const handleSelectClient = async (id: string | null) => {
         setActiveClientId(id);
         setIsSidebarOpen(false); // Close sidebar on mobile when selecting
+
         if (id) {
-            // Update lastAccessed timestamp
+            // Update lastAccessed timestamp when selecting
             await updateLastAccessed(id);
-            // Reload to get updated sorting
-            await loadAccounts();
         }
+
+        // Always reload to get updated sorting and sync times
+        await loadAccounts();
     };
 
     const activeClient = clients.find(c => c.id === activeClientId);
