@@ -11,6 +11,20 @@ interface EmailViewerProps {
     onBack: () => void;
 }
 
+const getPreviewText = (html: string) => {
+    if (!html) return '';
+    try {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        // Remove style and script tags
+        const styles = doc.querySelectorAll('style, script, link, meta');
+        styles.forEach(el => el.remove());
+        return doc.body.textContent || doc.body.innerText || '';
+    } catch (e) {
+        // Fallback for SSR or error
+        return html.replace(/<[^>]*>/g, '');
+    }
+};
+
 export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
     const {
         emails,
@@ -32,10 +46,13 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
     const [deleting, setDeleting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Select first email when emails load
+    // Select first email when emails load (Desktop only)
     useEffect(() => {
         if (emails.length > 0 && !selectedEmail) {
-            setSelectedEmail(emails[0]);
+            // Only auto-select on desktop (width >= 768px)
+            if (window.innerWidth >= 768) {
+                setSelectedEmail(emails[0]);
+            }
         }
     }, [emails, selectedEmail]);
 
@@ -98,9 +115,8 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
         <div className="bg-white">
             {/* Offline/Cache Banner */}
             {(isOffline || isCached) && (
-                <div className={`px-4 py-2 text-xs flex items-center justify-center gap-2 ${
-                    isOffline ? 'bg-amber-100 text-amber-800' : 'bg-blue-50 text-blue-700'
-                }`}>
+                <div className={`px-4 py-2 text-xs flex items-center justify-center gap-2 ${isOffline ? 'bg-amber-100 text-amber-800' : 'bg-blue-50 text-blue-700'
+                    }`}>
                     {isOffline ? (
                         <>
                             <WifiOff className="w-3 h-3" />
@@ -124,9 +140,8 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
                             <ArrowLeft className="w-5 h-5" />
                         </button>
                         <h2 className="font-semibold text-slate-800 truncate text-sm md:text-base">{client.user_email}</h2>
-                        <span className={`hidden sm:inline text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                            isOffline ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
-                        }`}>
+                        <span className={`hidden sm:inline text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${isOffline ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                            }`}>
                             {isOffline ? 'Offline' : 'Connected'}
                         </span>
                     </div>
@@ -140,9 +155,8 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
                         <button
                             onClick={refresh}
                             disabled={loading || refreshing || isOffline}
-                            className={`p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-all disabled:opacity-50 ${
-                                refreshing ? 'animate-spin' : ''
-                            }`}
+                            className={`p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-all disabled:opacity-50 ${refreshing ? 'animate-spin' : ''
+                                }`}
                             title={isOffline ? 'Cannot refresh while offline' : 'Refresh emails'}
                         >
                             <RotateCw className="w-5 h-5" />
@@ -190,11 +204,10 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
                                 <div
                                     key={email.id}
                                     onClick={() => setSelectedEmail(email)}
-                                    className={`p-4 border-b border-slate-100 cursor-pointer hover:bg-white transition-colors ${
-                                        selectedEmail?.id === email.id
-                                            ? 'bg-white border-l-4 border-l-blue-500 shadow-sm'
-                                            : 'border-l-4 border-l-transparent'
-                                    }`}
+                                    className={`p-4 border-b border-slate-100 cursor-pointer hover:bg-white transition-colors ${selectedEmail?.id === email.id
+                                        ? 'bg-white border-l-4 border-l-blue-500 shadow-sm'
+                                        : 'border-l-4 border-l-transparent'
+                                        }`}
                                 >
                                     <div className="flex justify-between items-start mb-1">
                                         <span className={`text-sm truncate pr-2 ${!email.isRead ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>
@@ -208,7 +221,7 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
                                         {email.subject}
                                     </div>
                                     <div className="text-xs text-slate-400 line-clamp-2">
-                                        {(email.body || '').replace(/<[^>]*>/g, '')}
+                                        {getPreviewText(email.body || '')}
                                     </div>
                                 </div>
                             ))}
@@ -255,9 +268,57 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
                             </div>
 
                             <div className="p-4 md:p-6">
-                                <div
-                                    className="prose prose-sm max-w-none text-slate-700"
-                                    dangerouslySetInnerHTML={{ __html: selectedEmail.body || '' }}
+                                <iframe
+                                    className="w-full border-none bg-white"
+                                    sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
+                                    srcDoc={`
+                                        <!DOCTYPE html>
+                                        <html>
+                                        <head>
+                                            <base target="_blank">
+                                            <style>
+                                                body {
+                                                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                                                    margin: 0;
+                                                    padding: 1rem;
+                                                    color: #334155;
+                                                    font-size: 0.875rem;
+                                                    line-height: 1.5;
+                                                    overflow-wrap: break-word;
+                                                }
+                                                img { max-width: 100%; height: auto; }
+                                                a { color: #2563eb; text-decoration: none; }
+                                                a:hover { text-decoration: underline; }
+                                                /* Reset some common email styles that might look weird */
+                                                table { max-width: 100%; }
+                                            </style>
+                                        </head>
+                                        <body>
+                                            ${selectedEmail.body || ''}
+                                            <script>
+                                                // Send height to parent
+                                                const notifyHeight = () => {
+                                                    const height = document.body.scrollHeight;
+                                                    window.parent.postMessage({ type: 'resize-email-frame', height: height }, '*');
+                                                };
+                                                window.onload = notifyHeight;
+                                                // Also observe resizing
+                                                new ResizeObserver(notifyHeight).observe(document.body);
+                                            </script>
+                                        </body>
+                                        </html>
+                                    `}
+                                    onLoad={(e) => {
+                                        // Handle height adjustment via message listener in parent or here
+                                        // Simpler approach without message passing for now:
+                                        const iframe = e.currentTarget;
+                                        if (iframe.contentWindow) {
+                                            // We can't access contentWindow properties easily if cross-origin, but srcDoc is same-origin usually.
+                                            // However, sandboxing might affect it.
+                                            // Let's rely on standard styling and a min-height for now, keeping it scrollable if needed.
+                                        }
+                                    }}
+                                    style={{ minHeight: '400px', height: '100%' }}
                                 />
 
                                 {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (

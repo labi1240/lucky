@@ -60,10 +60,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             key={client.id}
             onClick={() => onSelectClient(client.id)}
             className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md transition-colors group cursor-pointer ${activeClientId === client.id
-                    ? 'bg-slate-800 text-white border-l-4 border-blue-500'
-                    : isInactive
-                        ? 'hover:bg-slate-800/50 text-slate-500 hover:text-slate-300'
-                        : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-slate-800 text-white border-l-4 border-blue-500'
+                : isInactive
+                    ? 'hover:bg-slate-800/50 text-slate-500 hover:text-slate-300'
+                    : 'hover:bg-slate-800 text-slate-400 hover:text-white'
                 }`}
         >
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isInactive ? 'bg-slate-600' : client.status === 'connected' ? 'bg-green-500' : 'bg-amber-500'}`} />
@@ -101,7 +101,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             `}>
                 {/* Header - fixed height */}
                 <div className="h-[72px] p-6 flex items-center justify-between text-white">
-                    <div className="flex items-center space-x-3">
+                    <div
+                        className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => onSelectClient(null)}
+                    >
                         <div className="bg-blue-600 p-2 rounded-lg">
                             <Mail className="w-6 h-6" />
                         </div>
@@ -121,79 +124,79 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className="absolute left-0 right-0 overflow-y-scroll py-4"
                     style={{ top: '72px', bottom: '140px', WebkitOverflowScrolling: 'touch' }}
                 >
-                <div className="px-4 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Main
-                </div>
-                <nav className="space-y-1 px-2 mb-8">
-                    <button
-                        onClick={() => onSelectClient(null)}
-                        className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${activeClientId === null
+                    <div className="px-4 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Main
+                    </div>
+                    <nav className="space-y-1 px-2 mb-8">
+                        <button
+                            onClick={() => onSelectClient(null)}
+                            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${activeClientId === null
                                 ? 'bg-blue-600 text-white'
                                 : 'hover:bg-slate-800 text-slate-400 hover:text-white'
-                            }`}
-                    >
-                        <LayoutDashboard className="w-5 h-5" />
-                        <span>Dashboard</span>
-                    </button>
-                </nav>
-
-                <div className="px-4 mb-2 flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Connected Accounts
-                    </span>
-                    <button
-                        onClick={onAddClient}
-                        className="text-slate-500 hover:text-white transition-colors"
-                        title="Add Account"
-                    >
-                        <Plus className="w-4 h-4" />
-                    </button>
-                </div>
-
-                {/* Recently Accessed */}
-                {recentAccounts.length > 0 && (
-                    <div className="mb-4">
-                        <div className="px-4 mb-1 text-xs text-slate-600">
-                            Recently Accessed ({recentAccounts.length})
-                        </div>
-                        <nav className="space-y-1 px-2">
-                            {recentAccounts.map((client) => (
-                                <ClientButton key={client.id} client={client} isInactive={false} />
-                            ))}
-                        </nav>
-                    </div>
-                )}
-
-                {/* Inactive Accounts */}
-                {inactiveAccounts.length > 0 && (
-                    <div>
-                        <button
-                            onClick={() => setShowInactive(!showInactive)}
-                            className="w-full px-4 mb-1 flex items-center justify-between text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                                }`}
                         >
-                            <span>Inactive ({inactiveAccounts.length})</span>
-                            {showInactive ? (
-                                <ChevronDown className="w-3 h-3" />
-                            ) : (
-                                <ChevronRight className="w-3 h-3" />
-                            )}
+                            <LayoutDashboard className="w-5 h-5" />
+                            <span>Dashboard</span>
                         </button>
-                        {showInactive && (
+                    </nav>
+
+                    <div className="px-4 mb-2 flex items-center justify-between">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                            Connected Accounts
+                        </span>
+                        <button
+                            onClick={onAddClient}
+                            className="text-slate-500 hover:text-white transition-colors"
+                            title="Add Account"
+                        >
+                            <Plus className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* Recently Accessed */}
+                    {recentAccounts.length > 0 && (
+                        <div className="mb-4">
+                            <div className="px-4 mb-1 text-xs text-slate-600">
+                                Recently Accessed ({recentAccounts.length})
+                            </div>
                             <nav className="space-y-1 px-2">
-                                {inactiveAccounts.map((client) => (
-                                    <ClientButton key={client.id} client={client} isInactive={true} />
+                                {recentAccounts.map((client) => (
+                                    <ClientButton key={client.id} client={client} isInactive={false} />
                                 ))}
                             </nav>
-                        )}
-                    </div>
-                )}
+                        </div>
+                    )}
 
-                {clients.length === 0 && (
-                    <div className="px-4 py-4 text-sm text-slate-600 italic text-center">
-                        No accounts added yet.
-                    </div>
-                )}
-            </div>
+                    {/* Inactive Accounts */}
+                    {inactiveAccounts.length > 0 && (
+                        <div>
+                            <button
+                                onClick={() => setShowInactive(!showInactive)}
+                                className="w-full px-4 mb-1 flex items-center justify-between text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                            >
+                                <span>Inactive ({inactiveAccounts.length})</span>
+                                {showInactive ? (
+                                    <ChevronDown className="w-3 h-3" />
+                                ) : (
+                                    <ChevronRight className="w-3 h-3" />
+                                )}
+                            </button>
+                            {showInactive && (
+                                <nav className="space-y-1 px-2">
+                                    {inactiveAccounts.map((client) => (
+                                        <ClientButton key={client.id} client={client} isInactive={true} />
+                                    ))}
+                                </nav>
+                            )}
+                        </div>
+                    )}
+
+                    {clients.length === 0 && (
+                        <div className="px-4 py-4 text-sm text-slate-600 italic text-center">
+                            No accounts added yet.
+                        </div>
+                    )}
+                </div>
 
                 {/* Footer - fixed at bottom */}
                 <div className="absolute bottom-0 left-0 right-0 h-[140px] p-4 border-t border-slate-800 bg-slate-900">

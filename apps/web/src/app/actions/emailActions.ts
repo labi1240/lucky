@@ -106,7 +106,7 @@ export async function fetchEmails(
 
     try {
         // Fetch emails from Inbox
-        const graphUrl = 'https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=10&$orderby=receivedDateTime DESC';
+        const graphUrl = 'https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=25&$orderby=receivedDateTime DESC';
 
         const response = await fetch(graphUrl, {
             headers: {
@@ -141,8 +141,8 @@ export async function fetchEmails(
             original_object: msg as unknown as Record<string, unknown>
         }));
 
-        // Return just the first email to match previous behavior, or return all
-        return { emails: [emails[0]] };
+        // Return all emails
+        return { emails };
 
     } catch (error) {
         return { error: `Error fetching email via Graph: ${error}` };
