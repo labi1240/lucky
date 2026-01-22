@@ -5,7 +5,7 @@ import { toggleFavorite } from '../app/actions/accountActions';
 
 interface ClientDashboardProps {
     clients: OutlookClient[];
-    onSelectClient: (id: string) => void;
+    onSelectClient: (id: string | null) => void;
     onAddClient: () => void;
 }
 
