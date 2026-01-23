@@ -94,6 +94,36 @@ async function getAccessToken(clientId: string, refreshToken: string): Promise<{
 /**
  * Fetch emails from Outlook inbox using Microsoft Graph API
  */
+/**
+ * Helper to fetch messages from a specific folder
+ */
+async function fetchMessagesFromFolder(accessToken: string, folderName: string): Promise<GraphMessage[]> {
+    const graphUrl = `https://graph.microsoft.com/v1.0/me/mailFolders/${folderName}/messages?$top=25&$orderby=receivedDateTime DESC`;
+
+    try {
+        const response = await fetch(graphUrl, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`Error fetching from ${folderName}: ${response.statusText}`);
+            return [];
+        }
+
+        const data = await response.json();
+        return data.value || [];
+    } catch (error) {
+        console.error(`Exception fetching from ${folderName}:`, error);
+        return [];
+    }
+}
+
+/**
+ * Fetch emails from Outlook inbox and junk folder using Microsoft Graph API
+ */
 export async function fetchEmails(
     clientId: string,
     refreshToken: string,
@@ -108,32 +138,26 @@ export async function fetchEmails(
     }
 
     try {
-        // Fetch emails from Inbox
-        const graphUrl = 'https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=25&$orderby=receivedDateTime DESC';
+        // Fetch emails from Inbox and Junk Email in parallel
+        const [inboxMessages, junkMessages] = await Promise.all([
+            fetchMessagesFromFolder(accessToken, 'inbox'),
+            fetchMessagesFromFolder(accessToken, 'junkemail')
+        ]);
 
-        const response = await fetch(graphUrl, {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        // Combine messages
+        const allMessages = [...inboxMessages, ...junkMessages];
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            return { error: `Graph API Error (${response.status}): ${errorText}` };
-        }
-
-        const data = await response.json();
-
-        const messages: GraphMessage[] = data.value || [];
-
-        if (messages.length === 0) {
-            // Return empty array instead of error for empty inbox
+        if (allMessages.length === 0) {
             return { emails: [] };
         }
 
+        // Sort by date descending (newest first)
+        allMessages.sort((a, b) => {
+            return new Date(b.receivedDateTime).getTime() - new Date(a.receivedDateTime).getTime();
+        });
+
         // Transform messages to our format
-        const emails: EmailResult[] = messages.map((msg) => ({
+        const emails: EmailResult[] = allMessages.map((msg) => ({
             from: `${msg.from?.emailAddress?.name || ''} <${msg.from?.emailAddress?.address || ''}>`,
             to: msg.toRecipients?.map((r) => r.emailAddress?.address) || [],
             subject: msg.subject || '(No Subject)',
