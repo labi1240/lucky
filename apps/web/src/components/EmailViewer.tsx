@@ -45,6 +45,24 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
     const [selectedEmail, setSelectedEmail] = useState<EmailMessage | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [iframeHeight, setIframeHeight] = useState('400px');
+
+    // Handle iframe resize messages
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'resize-email-frame' && event.data?.height) {
+                setIframeHeight(`${event.data.height + 40}px`);
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, []);
+
+    // Reset height when email changes
+    useEffect(() => {
+        setIframeHeight('400px');
+    }, [selectedEmail]);
 
     // Select first email when emails load (Desktop only)
     useEffect(() => {
@@ -270,7 +288,7 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
                             <div className="p-4 md:p-6">
                                 <iframe
                                     className="w-full border-none bg-white"
-                                    sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
+                                    sandbox="allow-popups allow-popups-to-escape-sandbox allow-scripts"
                                     srcDoc={`
                                         <!DOCTYPE html>
                                         <html>
@@ -294,7 +312,7 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
                                             </style>
                                         </head>
                                         <body>
-                                            ${selectedEmail.body || ''}
+                                            ${(selectedEmail.body || '').replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")}
                                             <script>
                                                 // Send height to parent
                                                 const notifyHeight = () => {
@@ -304,6 +322,13 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
                                                 window.onload = notifyHeight;
                                                 // Also observe resizing
                                                 new ResizeObserver(notifyHeight).observe(document.body);
+                                                // Poll for a few seconds just in case of slow renders or transitions
+                                                let checks = 0;
+                                                const interval = setInterval(() => {
+                                                    notifyHeight();
+                                                    checks++;
+                                                    if (checks > 10) clearInterval(interval);
+                                                }, 500);
                                             </script>
                                         </body>
                                         </html>
@@ -318,7 +343,7 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
                                             // Let's rely on standard styling and a min-height for now, keeping it scrollable if needed.
                                         }
                                     }}
-                                    style={{ minHeight: '400px', height: '100%' }}
+                                    style={{ minHeight: '400px', height: iframeHeight, maxHeight: '1200px' }}
                                 />
 
                                 {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
