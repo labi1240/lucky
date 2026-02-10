@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { LayoutDashboard, Mail, Plus, Settings, ChevronDown, ChevronRight, Copy, Check, X } from 'lucide-react';
+import { LayoutDashboard, Mail, Plus, Settings, ChevronDown, ChevronRight, Copy, Check, X, Archive } from 'lucide-react';
 import { OutlookClient } from '../app/types';
 
 interface SidebarProps {
@@ -23,6 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
     // Auto-expand inactive when there are no recent accounts
     const [showInactive, setShowInactive] = useState(true);
+    const [showArchived, setShowArchived] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const handleCopyEmail = async (e: React.MouseEvent, email: string, id: string) => {
@@ -32,49 +33,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
         setTimeout(() => setCopiedId(null), 2000);
     };
 
-    // Sort clients by lastAccessed (most recent first)
-    const sortedClients = [...clients].sort((a, b) => {
+    // Separate archived from visible
+    const visibleClients = clients.filter(c => !c.is_archived);
+    const archivedClients = clients.filter(c => c.is_archived);
+
+    const sortedClients = [...visibleClients].sort((a, b) => {
         const aTime = a.last_accessed ? new Date(a.last_accessed).getTime() : 0;
         const bTime = b.last_accessed ? new Date(b.last_accessed).getTime() : 0;
         return bTime - aTime;
     });
 
-    // Split into recent and inactive (accounts with no last_accessed are inactive)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Split into "Today" (24h) and "History"
+    const oneDayAgo = new Date();
+    oneDayAgo.setHours(oneDayAgo.getHours() - 24);
 
     const recentAccounts = sortedClients.filter(client => {
         if (!client.last_accessed) return false;
         const lastTime = new Date(client.last_accessed);
-        return lastTime > sevenDaysAgo;
+        return lastTime > oneDayAgo;
     });
 
     const inactiveAccounts = sortedClients.filter(client => {
         if (!client.last_accessed) return true;
         const lastTime = new Date(client.last_accessed);
-        return lastTime <= sevenDaysAgo;
+        return lastTime <= oneDayAgo;
     });
 
     const ClientButton = ({ client, isInactive }: { client: OutlookClient; isInactive?: boolean }) => (
         <div
             key={client.id}
             onClick={() => onSelectClient(client.id)}
-            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md transition-colors group cursor-pointer ${activeClientId === client.id
-                ? 'bg-slate-800 text-white border-l-4 border-blue-500'
+            className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all group cursor-pointer border border-transparent ${
+                activeClientId === client.id
+                ? 'bg-blue-600/20 text-blue-100 border-blue-500/30 shadow-lg shadow-blue-900/20 backdrop-blur-sm'
                 : isInactive
-                    ? 'hover:bg-slate-800/50 text-slate-500 hover:text-slate-300'
-                    : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                    ? 'hover:bg-white/5 text-slate-500 hover:text-slate-300'
+                    : 'hover:bg-white/10 text-slate-400 hover:text-white'
                 }`}
         >
-            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isInactive ? 'bg-slate-600' : client.status === 'connected' ? 'bg-green-500' : 'bg-amber-500'}`} />
-            <span className={`truncate text-sm flex-1 ${isInactive ? 'opacity-60' : ''}`}>{client.user_email}</span>
+            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${
+                isInactive ? 'bg-slate-700' : client.status === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-amber-500 shadow-amber-500/50'
+            }`} />
+            <span className={`truncate text-sm font-medium flex-1 ${isInactive ? 'opacity-60' : ''}`}>{client.user_email}</span>
             <button
                 onClick={(e) => handleCopyEmail(e, client.user_email, client.id)}
-                className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1.5 hover:bg-slate-700 rounded transition-opacity"
+                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-white/10 rounded-lg transition-all transform scale-90 hover:scale-100"
                 title="Copy email"
             >
                 {copiedId === client.id ? (
-                    <Check className="w-3.5 h-3.5 text-green-400" />
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
                 ) : (
                     <Copy className="w-3.5 h-3.5" />
                 )}
@@ -87,7 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Mobile overlay */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
                     onClick={onClose}
                 />
             )}
@@ -95,71 +102,72 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Sidebar */}
             <div className={`
                 fixed inset-y-0 left-0 z-50
-                w-72 md:w-64 bg-slate-900 text-slate-300 border-r border-slate-800
-                transform transition-transform duration-300 ease-in-out
+                w-72 md:w-64 bg-slate-950/90 backdrop-blur-xl border-r border-white/5 text-slate-300
+                transform transition-transform duration-300 ease-out shadow-2xl
                 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}>
                 {/* Header - fixed height */}
-                <div className="h-[72px] p-6 flex items-center justify-between text-white">
+                <div className="h-[80px] px-6 flex items-center justify-between text-white border-b border-white/5 bg-slate-900/50">
                     <div
                         className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => onSelectClient(null)}
                     >
-                        <div className="bg-blue-600 p-2 rounded-lg">
-                            <Mail className="w-6 h-6" />
+                        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
+                            <Mail className="w-5 h-5 text-white" />
                         </div>
-                        <span className="font-bold text-lg tracking-tight">Outlook Mgr</span>
+                        <span className="font-bold text-lg tracking-tight font-sans">Outlook<span className="text-blue-500">Mgr</span></span>
                     </div>
                     {/* Mobile close button */}
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-slate-800 rounded-lg transition-colors md:hidden"
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors md:hidden"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                {/* Scrollable content - explicit height calculation */}
+                {/* Scrollable content */}
                 <div
-                    className="absolute left-0 right-0 overflow-y-scroll py-4"
-                    style={{ top: '72px', bottom: '140px', WebkitOverflowScrolling: 'touch' }}
+                    className="absolute left-0 right-0 overflow-y-auto py-6"
+                    style={{ top: '80px', bottom: '100px', WebkitOverflowScrolling: 'touch' }}
                 >
-                    <div className="px-4 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Main
+                    <div className="px-6 mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                        Overview
                     </div>
-                    <nav className="space-y-1 px-2 mb-8">
+                    <nav className="space-y-1 px-3 mb-8">
                         <button
                             onClick={() => onSelectClient(null)}
-                            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${activeClientId === null
-                                ? 'bg-blue-600 text-white'
-                                : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                            className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all ${activeClientId === null
+                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+                                : 'hover:bg-white/5 text-slate-400 hover:text-white'
                                 }`}
                         >
-                            <LayoutDashboard className="w-5 h-5" />
-                            <span>Dashboard</span>
+                            <LayoutDashboard className="w-5 h-5 opacity-90" />
+                            <span className="font-medium text-sm">Dashboard</span>
                         </button>
                     </nav>
 
-                    <div className="px-4 mb-2 flex items-center justify-between">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                            Connected Accounts
+                    <div className="px-6 mb-3 flex items-center justify-between group">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                            Accounts
                         </span>
                         <button
                             onClick={onAddClient}
-                            className="text-slate-500 hover:text-white transition-colors"
+                            className="text-slate-500 hover:text-white transition-colors bg-white/5 hover:bg-blue-600 rounded-full p-1"
                             title="Add Account"
                         >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-3 h-3" />
                         </button>
                     </div>
 
-                    {/* Recently Accessed */}
+                    {/* Today's Focus */}
                     {recentAccounts.length > 0 && (
-                        <div className="mb-4">
-                            <div className="px-4 mb-1 text-xs text-slate-600">
-                                Recently Accessed ({recentAccounts.length})
+                        <div className="mb-6">
+                            <div className="px-6 mb-2 text-xs font-semibold text-blue-400/90 flex items-center">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2 animate-pulse"></div>
+                                {"Today's Focus"} ({recentAccounts.length})
                             </div>
-                            <nav className="space-y-1 px-2">
+                            <nav className="space-y-1 px-3">
                                 {recentAccounts.map((client) => (
                                     <ClientButton key={client.id} client={client} isInactive={false} />
                                 ))}
@@ -167,22 +175,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                     )}
 
-                    {/* Inactive Accounts */}
+                    {/* Logic for History:
+                        If we have recent accounts, we collapse history by default or show it?
+                        User said: "use 3-4 accounts for 1 day then not much use".
+                        So old accounts are "History".
+                    */}
                     {inactiveAccounts.length > 0 && (
                         <div>
                             <button
                                 onClick={() => setShowInactive(!showInactive)}
-                                className="w-full px-4 mb-1 flex items-center justify-between text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                                className="w-full px-6 mb-2 flex items-center justify-between text-xs font-medium text-slate-600 hover:text-slate-400 transition-colors group"
                             >
-                                <span>Inactive ({inactiveAccounts.length})</span>
+                                <span>History ({inactiveAccounts.length})</span>
                                 {showInactive ? (
-                                    <ChevronDown className="w-3 h-3" />
+                                    <ChevronDown className="w-3 h-3 group-hover:text-blue-400 transition-colors" />
                                 ) : (
-                                    <ChevronRight className="w-3 h-3" />
+                                    <ChevronRight className="w-3 h-3 group-hover:text-blue-400 transition-colors" />
                                 )}
                             </button>
                             {showInactive && (
-                                <nav className="space-y-1 px-2">
+                                <nav className="space-y-1 px-3 relative">
+                                    {/* Vertical line for hierarchy */}
+                                    <div className="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
                                     {inactiveAccounts.map((client) => (
                                         <ClientButton key={client.id} client={client} isInactive={true} />
                                     ))}
@@ -191,26 +205,54 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                     )}
 
+                    {/* Archived */}
+                    {archivedClients.length > 0 && (
+                        <div className="mt-2">
+                            <button
+                                onClick={() => setShowArchived(!showArchived)}
+                                className="w-full px-6 mb-2 flex items-center justify-between text-xs font-medium text-slate-600 hover:text-slate-400 transition-colors group"
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    <Archive className="w-3 h-3" />
+                                    Archived ({archivedClients.length})
+                                </span>
+                                {showArchived ? (
+                                    <ChevronDown className="w-3 h-3 group-hover:text-blue-400 transition-colors" />
+                                ) : (
+                                    <ChevronRight className="w-3 h-3 group-hover:text-blue-400 transition-colors" />
+                                )}
+                            </button>
+                            {showArchived && (
+                                <nav className="space-y-1 px-3 relative">
+                                    <div className="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
+                                    {archivedClients.map((client) => (
+                                        <ClientButton key={client.id} client={client} isInactive={true} />
+                                    ))}
+                                </nav>
+                            )}
+                        </div>
+                    )}
+
                     {clients.length === 0 && (
-                        <div className="px-4 py-4 text-sm text-slate-600 italic text-center">
-                            No accounts added yet.
+                        <div className="px-6 py-8 text-sm text-slate-600 italic text-center border-t border-white/5 border-dashed m-4">
+                            No accounts active
                         </div>
                     )}
                 </div>
 
                 {/* Footer - fixed at bottom */}
-                <div className="absolute bottom-0 left-0 right-0 h-[140px] p-4 border-t border-slate-800 bg-slate-900">
-                    <button className="flex items-center space-x-3 text-slate-400 hover:text-white transition-colors w-full px-2 py-2">
+                <div className="absolute bottom-0 left-0 right-0 h-[100px] p-4 border-t border-white/5 bg-slate-950/50 backdrop-blur-xl">
+                    <button className="flex items-center space-x-3 text-slate-400 hover:text-white transition-colors w-full px-3 py-2 rounded-lg hover:bg-white/5">
                         <Settings className="w-5 h-5" />
-                        <span>Settings</span>
+                        <span className="font-medium text-sm">Settings</span>
                     </button>
-                    <div className="mt-4 flex items-center space-x-3 px-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs text-white">
+                    <div className="mt-2 flex items-center space-x-3 px-3 py-2 rounded-xl bg-white/5 border border-white/5">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-slate-600 flex items-center justify-center text-xs text-white font-bold ring-2 ring-slate-900">
                             AD
                         </div>
-                        <div className="flex-1">
-                            <div className="text-sm font-medium text-white">Admin User</div>
-                            <div className="text-xs text-slate-500">admin@platform.com</div>
+                        <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-white truncate">Admin User</div>
+                            <div className="text-xs text-slate-500 truncate">admin@platform.com</div>
                         </div>
                     </div>
                 </div>

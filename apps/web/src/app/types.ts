@@ -7,6 +7,7 @@ export interface OutlookClient {
     last_synced?: string;
     last_accessed?: string;
     is_favorite?: boolean;
+    is_archived?: boolean;
 }
 
 export interface EmailMessage {

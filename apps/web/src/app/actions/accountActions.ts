@@ -19,7 +19,8 @@ export async function getAllAccounts(): Promise<OutlookClient[]> {
             status: account.status as 'connected' | 'error' | 'syncing',
             last_synced: account.lastSynced.toISOString(),
             last_accessed: account.lastAccessed?.toISOString(),
-            is_favorite: account.isFavorite
+            is_favorite: account.isFavorite,
+            is_archived: account.isArchived
         }));
     } catch (error) {
         console.error('Error fetching accounts:', error);
@@ -46,7 +47,8 @@ export async function createAccount(data: Omit<OutlookClient, 'id' | 'status'>):
         refresh_token: account.refreshToken,
         status: account.status as 'connected' | 'error' | 'syncing',
         last_synced: account.lastSynced.toISOString(),
-        last_accessed: account.lastAccessed?.toISOString()
+        last_accessed: account.lastAccessed?.toISOString(),
+        is_archived: false
     };
 }
 
@@ -85,6 +87,15 @@ export async function toggleFavorite(id: string, isFavorite: boolean): Promise<v
         where: { id },
         data: {
             isFavorite
+        }
+    });
+}
+
+export async function toggleArchive(id: string, isArchived: boolean): Promise<void> {
+    await prisma.outlookAccount.update({
+        where: { id },
+        data: {
+            isArchived
         }
     });
 }

@@ -19,6 +19,7 @@ model OutlookAccount {
   lastSynced   DateTime  @default(now()) @map("last_synced")
   lastAccessed DateTime? @map("last_accessed")
   isFavorite   Boolean   @default(false) @map("is_favorite")
+  isArchived   Boolean   @default(false) @map("is_archived")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 

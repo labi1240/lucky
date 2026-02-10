@@ -196,67 +196,69 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
             </div>
 
             {/* Content */}
-            <div className="md:flex">
+            <div className="flex flex-1 overflow-hidden h-[calc(100vh-140px)]">
                 {/* Email List */}
-                <div className={`md:w-1/3 lg:w-[400px] md:border-r border-slate-200 bg-slate-50 ${selectedEmail ? 'hidden md:block' : 'block'}`}>
-                    <div className="p-3 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase flex justify-between sticky top-[104px] md:top-[112px] bg-slate-50 z-10">
+                <div className={`md:w-1/3 lg:w-[400px] border-r border-slate-200 bg-slate-50 flex flex-col ${selectedEmail ? 'hidden md:flex' : 'flex'} h-full`}>
+                    <div className="p-3 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase flex justify-between bg-slate-50 z-10 shrink-0">
                         <span>Inbox</span>
                         <span>{filteredEmails.length} messages</span>
                     </div>
 
-                    {error && !emails.length && (
-                        <div className="p-4 m-4 bg-red-50 text-red-600 text-xs rounded-lg border border-red-200">
-                            {error}
-                        </div>
-                    )}
-
-                    {loading && emails.length === 0 ? (
-                        <div className="p-8 text-center text-slate-400 text-sm">
-                            <div className="animate-pulse">
-                                {isOffline ? 'Checking cache...' : 'Loading emails...'}
+                    <div className="overflow-y-auto flex-1">
+                        {error && !emails.length && (
+                            <div className="p-4 m-4 bg-red-50 text-red-600 text-xs rounded-lg border border-red-200">
+                                {error}
                             </div>
-                        </div>
-                    ) : (
-                        <div>
-                            {filteredEmails.map(email => (
-                                <div
-                                    key={email.id}
-                                    onClick={() => setSelectedEmail(email)}
-                                    className={`p-4 border-b border-slate-100 cursor-pointer hover:bg-white transition-colors ${selectedEmail?.id === email.id
-                                        ? 'bg-white border-l-4 border-l-blue-500 shadow-sm'
-                                        : 'border-l-4 border-l-transparent'
-                                        }`}
-                                >
-                                    <div className="flex justify-between items-start mb-1">
-                                        <span className={`text-sm truncate pr-2 ${!email.isRead ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>
-                                            {(email.from || '').split('<')[0]}
-                                        </span>
-                                        <span className="text-xs text-slate-400 whitespace-nowrap">
-                                            {email.date ? new Date(email.date).toLocaleDateString() : ''}
-                                        </span>
-                                    </div>
-                                    <div className={`text-sm mb-1 truncate ${!email.isRead ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>
-                                        {email.subject}
-                                    </div>
-                                    <div className="text-xs text-slate-400 line-clamp-2">
-                                        {getPreviewText(email.body || '')}
-                                    </div>
+                        )}
+
+                        {loading && emails.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 text-sm">
+                                <div className="animate-pulse">
+                                    {isOffline ? 'Checking cache...' : 'Loading emails...'}
                                 </div>
-                            ))}
-                            {filteredEmails.length === 0 && !loading && (
-                                <div className="p-8 text-center text-slate-400 text-sm">
-                                    {searchTerm ? 'No emails match your search' : 'No emails found'}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                            </div>
+                        ) : (
+                            <div>
+                                {filteredEmails.map(email => (
+                                    <div
+                                        key={email.id}
+                                        onClick={() => setSelectedEmail(email)}
+                                        className={`p-4 border-b border-slate-100 cursor-pointer transition-colors ${selectedEmail?.id === email.id
+                                            ? 'bg-white border-l-4 border-l-blue-500 shadow-sm'
+                                            : 'hover:bg-white border-l-4 border-l-transparent'
+                                            }`}
+                                    >
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className={`text-sm truncate pr-2 ${!email.isRead ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>
+                                                {(email.from || '').split('<')[0]}
+                                            </span>
+                                            <span className="text-xs text-slate-400 whitespace-nowrap">
+                                                {formatLastUpdated(email.date ? new Date(email.date) : null)}
+                                            </span>
+                                        </div>
+                                        <div className={`text-sm mb-1 truncate ${!email.isRead ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>
+                                            {email.subject}
+                                        </div>
+                                        <div className="text-xs text-slate-400 line-clamp-2">
+                                            {getPreviewText(email.body || '')}
+                                        </div>
+                                    </div>
+                                ))}
+                                {filteredEmails.length === 0 && !loading && (
+                                    <div className="p-8 text-center text-slate-400 text-sm">
+                                        {searchTerm ? 'No emails match your search' : 'No emails found'}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Email Detail */}
-                <div className={`md:flex-1 bg-white ${!selectedEmail ? 'hidden md:block' : 'block'}`}>
+                <div className={`flex-1 bg-white flex flex-col h-full overflow-hidden ${!selectedEmail ? 'hidden md:flex' : 'flex'}`}>
                     {selectedEmail ? (
-                        <div>
-                            <div className="p-4 md:p-6 border-b border-slate-100">
+                        <div className="flex flex-col h-full">
+                            <div className="p-4 md:p-6 border-b border-slate-100 shrink-0">
                                 <div className="flex justify-between items-start mb-4 gap-2">
                                     <button onClick={() => setSelectedEmail(null)} className="md:hidden p-2 text-slate-400 flex-shrink-0 -ml-2">
                                         <ArrowLeft className="w-5 h-5" />
@@ -273,100 +275,88 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack }) => {
                                 </div>
 
                                 <div className="flex items-center space-x-3">
-                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs md:text-sm flex-shrink-0">
+                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-xs md:text-sm flex-shrink-0 shadow-sm">
                                         {(selectedEmail.from || 'A').charAt(0).toUpperCase()}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-medium text-slate-900 truncate">{selectedEmail.from}</div>
-                                        <div className="text-xs text-slate-500 truncate">
-                                            To: {(selectedEmail.to || []).join(', ')} • {new Date(selectedEmail.date).toLocaleDateString()}
+                                        <div className="text-sm font-bold text-slate-900 truncate">{selectedEmail.from}</div>
+                                        <div className="text-xs text-slate-500 truncate flex items-center">
+                                            To: {(selectedEmail.to || []).join(', ')}
+                                            <span className="mx-1.5">•</span>
+                                            {new Date(selectedEmail.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="p-4 md:p-6">
-                                <iframe
-                                    className="w-full border-none bg-white"
-                                    sandbox="allow-popups allow-popups-to-escape-sandbox allow-scripts"
-                                    srcDoc={`
-                                        <!DOCTYPE html>
-                                        <html>
-                                        <head>
-                                            <base target="_blank">
-                                            <style>
-                                                body {
-                                                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                                                    margin: 0;
-                                                    padding: 1rem;
-                                                    color: #334155;
-                                                    font-size: 0.875rem;
-                                                    line-height: 1.5;
-                                                    overflow-wrap: break-word;
-                                                }
-                                                img { max-width: 100%; height: auto; }
-                                                a { color: #2563eb; text-decoration: none; }
-                                                a:hover { text-decoration: underline; }
-                                                /* Reset some common email styles that might look weird */
-                                                table { max-width: 100%; }
-                                            </style>
-                                        </head>
-                                        <body>
-                                            ${(selectedEmail.body || '').replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")}
-                                            <script>
-                                                // Send height to parent
-                                                const notifyHeight = () => {
-                                                    const height = document.body.scrollHeight;
-                                                    window.parent.postMessage({ type: 'resize-email-frame', height: height }, '*');
-                                                };
-                                                window.onload = notifyHeight;
-                                                // Also observe resizing
-                                                new ResizeObserver(notifyHeight).observe(document.body);
-                                                // Poll for a few seconds just in case of slow renders or transitions
-                                                let checks = 0;
-                                                const interval = setInterval(() => {
-                                                    notifyHeight();
-                                                    checks++;
-                                                    if (checks > 10) clearInterval(interval);
-                                                }, 500);
-                                            </script>
-                                        </body>
-                                        </html>
-                                    `}
-                                    onLoad={(e) => {
-                                        // Handle height adjustment via message listener in parent or here
-                                        // Simpler approach without message passing for now:
-                                        const iframe = e.currentTarget;
-                                        if (iframe.contentWindow) {
-                                            // We can't access contentWindow properties easily if cross-origin, but srcDoc is same-origin usually.
-                                            // However, sandboxing might affect it.
-                                            // Let's rely on standard styling and a min-height for now, keeping it scrollable if needed.
-                                        }
-                                    }}
-                                    style={{ minHeight: '400px', height: iframeHeight, maxHeight: '1200px' }}
-                                />
+                            <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30">
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-1 min-h-[calc(100%-2rem)]">
+                                    <iframe
+                                        className="w-full border-none bg-white rounded-lg"
+                                        sandbox="allow-popups allow-popups-to-escape-sandbox allow-scripts"
+                                        srcDoc={`
+                                            <!DOCTYPE html>
+                                            <html>
+                                            <head>
+                                                <base target="_blank">
+                                                <style>
+                                                    body {
+                                                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                                                        margin: 0;
+                                                        padding: 2rem;
+                                                        color: #334155;
+                                                        font-size: 0.95rem;
+                                                        line-height: 1.6;
+                                                        overflow-wrap: break-word;
+                                                    }
+                                                    img { max-width: 100%; height: auto; border-radius: 4px; }
+                                                    a { color: #2563eb; text-decoration: none; font-weight: 500; }
+                                                    a:hover { text-decoration: underline; }
+                                                    p { margin-bottom: 1em; }
+                                                    blockquote { border-left: 4px solid #e2e8f0; margin: 0; padding-left: 1rem; color: #64748b; }
+                                                </style>
+                                            </head>
+                                            <body>
+                                                ${(selectedEmail.body || '').replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")}
+                                                <script>
+                                                    const notifyHeight = () => {
+                                                        const height = document.body.scrollHeight;
+                                                        window.parent.postMessage({ type: 'resize-email-frame', height: height }, '*');
+                                                    };
+                                                    window.onload = notifyHeight;
+                                                    new ResizeObserver(notifyHeight).observe(document.body);
+                                                </script>
+                                            </body>
+                                            </html>
+                                        `}
+                                        style={{ minHeight: '400px', height: iframeHeight }}
+                                    />
+                                </div>
 
                                 {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
-                                    <div className="mt-8 pt-4 border-t border-slate-100">
+                                    <div className="mt-8 pt-4 border-t border-slate-200">
                                         <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center">
                                             <Paperclip className="w-3 h-3 mr-2" />
                                             Attachments
                                         </h4>
-                                        <div className="flex gap-2">
-                                            <div className="p-3 border border-slate-200 rounded-lg text-sm text-slate-600">
-                                                Attachment
-                                            </div>
+                                        <div className="flex gap-2 flex-wrap">
+                                            {selectedEmail.attachments.map((att, i) => (
+                                                 <div key={i} className="p-3 border border-slate-200 bg-white rounded-lg text-sm text-slate-700 shadow-sm flex items-center gap-2 hover:border-blue-300 transition-colors cursor-pointer">
+                                                    <Paperclip className="w-4 h-4 text-slate-400" />
+                                                    Attachment {i + 1}
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
                             </div>
                         </div>
                     ) : (
-                        <div className="h-64 flex flex-col items-center justify-center text-slate-300">
-                            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                <ArrowLeft className="w-8 h-8 opacity-20" />
+                        <div className="h-full flex flex-col items-center justify-center text-slate-300 bg-slate-50/30">
+                            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-slate-100">
+                                <Search className="w-10 h-10 text-slate-200" />
                             </div>
-                            <p className="text-lg font-medium">Select an email to read</p>
+                            <p className="text-lg font-medium text-slate-500">Select an email to read</p>
                         </div>
                     )}
                 </div>
