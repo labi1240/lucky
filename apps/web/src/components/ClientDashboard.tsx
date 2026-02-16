@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { OutlookClient } from '../app/types';
-import { RefreshCw, AlertCircle, CheckCircle, Plus, Clock, Star, Archive, ChevronDown, ChevronRight } from 'lucide-react';
-import { toggleFavorite, toggleArchive } from '../app/actions/accountActions';
+import { RefreshCw, AlertCircle, CheckCircle, Plus, Clock, Star, Archive, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
+import { toggleFavorite, toggleArchive, toggleCasino } from '../app/actions/accountActions';
 
 // ─── Extracted Components (outside render to avoid React lint errors) ────────
 
@@ -15,37 +15,58 @@ const ClientCard = ({
     isInactive?: boolean;
     onSelectClient: (id: string | null) => void;
     onRefreshDashboard: () => void;
-}) => (
-    <div
-        className={`group relative overflow-hidden rounded-xl md:rounded-2xl transition-all duration-300 cursor-pointer
-            ${isInactive
-                ? 'bg-white/50 border border-slate-200 hover:bg-white hover:shadow-lg hover:-translate-y-0.5'
-                : 'bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 hover:-translate-y-0.5'
-            }
-        `}
-        onClick={() => onSelectClient(client.id)}
-    >
-        {/* Gradient accent top border for active cards */}
-        {!isInactive && <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />}
+}) => {
+    const [copied, setCopied] = useState(false);
 
-        {/* Mobile: compact p-3, Desktop: spacious p-6 */}
-        <div className="p-3 md:p-6">
-            <div className="flex justify-between items-start mb-2 md:mb-5">
-                <div className={`p-1.5 md:p-2.5 rounded-lg md:rounded-xl transition-colors ${isInactive
-                    ? 'bg-slate-100 text-slate-400'
-                    : client.status === 'connected'
-                        ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
-                        : 'bg-amber-50 text-amber-600 group-hover:bg-amber-500 group-hover:text-white'
-                    }`}>
-                    {isInactive ? (
-                        <Clock className="w-4 h-4 md:w-5 md:h-5" />
-                    ) : client.status === 'connected' ? (
-                        <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                    ) : (
-                        <AlertCircle className="w-4 h-4 md:w-5 md:h-5" />
-                    )}
-                </div>
-                <div className="flex gap-1 md:gap-2">
+    const handleCopyEmail = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        await navigator.clipboard.writeText(client.user_email);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div
+            className={`group relative overflow-hidden rounded-xl md:rounded-2xl transition-all duration-300 cursor-pointer
+                ${isInactive
+                    ? 'bg-white/50 border border-slate-200 hover:bg-white hover:shadow-lg hover:-translate-y-0.5'
+                    : 'bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 hover:-translate-y-0.5'
+                }
+            `}
+            onClick={() => onSelectClient(client.id)}
+        >
+            {/* Gradient accent top border for active cards */}
+            {!isInactive && <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />}
+
+            {/* Mobile: compact p-3, Desktop: spacious p-6 */}
+            <div className="p-3 md:p-6">
+                <div className="flex justify-between items-start mb-2 md:mb-5">
+                    <div className={`p-1.5 md:p-2.5 rounded-lg md:rounded-xl transition-colors ${isInactive
+                        ? 'bg-slate-100 text-slate-400'
+                        : client.status === 'connected'
+                            ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                            : 'bg-amber-50 text-amber-600 group-hover:bg-amber-500 group-hover:text-white'
+                        }`}>
+                        {isInactive ? (
+                            <Clock className="w-4 h-4 md:w-5 md:h-5" />
+                        ) : client.status === 'connected' ? (
+                            <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
+                        ) : (
+                            <AlertCircle className="w-4 h-4 md:w-5 md:h-5" />
+                        )}
+                    </div>
+                    <div className="flex gap-1 md:gap-2">
+                        <button
+                            className="text-slate-300 hover:text-blue-600 hover:bg-blue-50 p-1.5 md:p-2 rounded-lg transition-colors"
+                            onClick={handleCopyEmail}
+                            title="Copy email address"
+                        >
+                            {copied ? (
+                                <Check className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-500" />
+                            ) : (
+                                <Copy className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            )}
+                        </button>
                     <button
                         className={`transition-colors p-1.5 md:p-2 rounded-lg ${client.is_favorite
                             ? 'text-amber-400 bg-amber-50 hover:bg-amber-100'
@@ -83,6 +104,40 @@ const ClientCard = ({
                 </p>
             </div>
 
+            {/* Casino Badges */}
+            <div className="flex flex-wrap gap-2 mb-2 md:mb-4 px-3 md:px-0">
+                {[
+                    { id: 'luckydays', name: 'LuckyDays', logo: 'https://luckydays.ca/favicon.ico' },
+                    { id: 'betty.com', name: 'Betty.com', logo: 'https://betty.ca/favicon/apple-icon-57x57.png' },
+                    { id: 'betty.ca', name: 'Betty.ca', logo: 'https://betty.ca/favicon/apple-icon-57x57.png' }
+                ].map(casino => {
+                    const isSelected = (client.casinos || '').split(',').includes(casino.id);
+                    return (
+                        <button
+                            key={casino.id}
+                            className={`flex items-center space-x-1.5 px-2 py-1 rounded-lg transition-all border ${
+                                isSelected
+                                    ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20'
+                                    : 'bg-slate-50 border-slate-200 text-slate-400 group-hover:border-slate-300'
+                            }`}
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                await toggleCasino(client.id, casino.id);
+                                onRefreshDashboard();
+                            }}
+                            title={`Toggle ${casino.name} tracking`}
+                        >
+                            <div className={`w-3.5 h-3.5 md:w-4 md:h-4 rounded-md overflow-hidden bg-white flex-shrink-0 ${isSelected ? '' : 'grayscale opacity-60'}`}>
+                                <img src={casino.logo} alt={casino.name} className="w-full h-full object-contain" />
+                            </div>
+                            <span className="text-[9px] md:text-[11px] font-bold uppercase tracking-tight">
+                                {casino.name.split('.')[0]}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
             <div className={`flex items-center text-[10px] md:text-xs pt-2 md:pt-4 border-t ${isInactive ? 'border-slate-100 text-slate-400' : 'border-slate-50 text-slate-500'}`}>
                 <RefreshCw className={`w-3 h-3 md:w-3.5 md:h-3.5 mr-1.5 md:mr-2 ${client.status === 'syncing' ? 'animate-spin text-blue-500' : ''}`} />
                 <span>
@@ -95,6 +150,7 @@ const ClientCard = ({
         </div>
     </div>
 );
+};
 
 const AddButton = ({ onAddClient }: { onAddClient: () => void }) => (
     <button
@@ -125,7 +181,6 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clients, onSel
 
     // Filter out archived accounts from main views
     const activeClients = clients.filter(c => !c.is_archived);
-    const archivedClients = clients.filter(c => c.is_archived);
 
     // 1. Separate Favorites
     const favoriteAccounts = activeClients.filter(c => c.is_favorite);
@@ -149,11 +204,11 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clients, onSel
             const lastTime = new Date(client.last_accessed);
             return lastTime <= oneDayAgo;
         })
-        .sort((a, b) => {
-            const aSync = a.last_synced ? new Date(a.last_synced).getTime() : 0;
-            const bSync = b.last_synced ? new Date(b.last_synced).getTime() : 0;
-            return bSync - aSync;
-        });
+        .sort((a, b) => a.user_email.localeCompare(b.user_email));
+
+    const archivedClients = clients
+        .filter(c => c.is_archived)
+        .sort((a, b) => a.user_email.localeCompare(b.user_email));
 
     return (
         <div className="min-h-screen bg-slate-50/50 p-4 md:p-10 pb-20">

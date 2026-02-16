@@ -1,3 +1,6 @@
+// This is your Prisma schema file
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -18,7 +21,6 @@ model OutlookAccount {
   isArchived   Boolean   @default(false) @map("is_archived")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
-  casinos      String    @default("") @map("casinos")
 
   @@map("outlook_accounts")
 }

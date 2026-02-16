@@ -8,6 +8,7 @@ export interface OutlookClient {
     last_accessed?: string;
     is_favorite?: boolean;
     is_archived?: boolean;
+    casinos?: string;
 }
 
 export interface EmailMessage {

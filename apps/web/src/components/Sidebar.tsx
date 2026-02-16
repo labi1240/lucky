@@ -34,60 +34,84 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
 
     // Separate archived from visible
-    const visibleClients = clients.filter(c => !c.is_archived);
-    const archivedClients = clients.filter(c => c.is_archived);
-
-    const sortedClients = [...visibleClients].sort((a, b) => {
-        const aTime = a.last_accessed ? new Date(a.last_accessed).getTime() : 0;
-        const bTime = b.last_accessed ? new Date(b.last_accessed).getTime() : 0;
-        return bTime - aTime;
-    });
+    const archivedClients = clients
+        .filter(c => c.is_archived)
+        .sort((a, b) => a.user_email.localeCompare(b.user_email));
+    
+    const visibleClients = clients
+        .filter(c => !c.is_archived)
+        .sort((a, b) => a.user_email.localeCompare(b.user_email));
 
     // Split into "Today" (24h) and "History"
     const oneDayAgo = new Date();
     oneDayAgo.setHours(oneDayAgo.getHours() - 24);
 
-    const recentAccounts = sortedClients.filter(client => {
+    const recentAccounts = visibleClients.filter((client: OutlookClient) => {
         if (!client.last_accessed) return false;
         const lastTime = new Date(client.last_accessed);
         return lastTime > oneDayAgo;
     });
 
-    const inactiveAccounts = sortedClients.filter(client => {
+    const inactiveAccounts = visibleClients.filter((client: OutlookClient) => {
         if (!client.last_accessed) return true;
         const lastTime = new Date(client.last_accessed);
         return lastTime <= oneDayAgo;
     });
 
-    const ClientButton = ({ client, isInactive }: { client: OutlookClient; isInactive?: boolean }) => (
-        <div
-            key={client.id}
-            onClick={() => onSelectClient(client.id)}
-            className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all group cursor-pointer border border-transparent ${
-                activeClientId === client.id
-                ? 'bg-blue-600/20 text-blue-100 border-blue-500/30 shadow-lg shadow-blue-900/20 backdrop-blur-sm'
-                : isInactive
-                    ? 'hover:bg-white/5 text-slate-500 hover:text-slate-300'
-                    : 'hover:bg-white/10 text-slate-400 hover:text-white'
-                }`}
-        >
-            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${
-                isInactive ? 'bg-slate-700' : client.status === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-amber-500 shadow-amber-500/50'
-            }`} />
-            <span className={`truncate text-sm font-medium flex-1 ${isInactive ? 'opacity-60' : ''}`}>{client.user_email}</span>
-            <button
-                onClick={(e) => handleCopyEmail(e, client.user_email, client.id)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-white/10 rounded-lg transition-all transform scale-90 hover:scale-100"
-                title="Copy email"
+    const casinoLogos: Record<string, string> = {
+        'luckydays': 'https://luckydays.ca/favicon.ico',
+        'betty.com': 'https://betty.ca/favicon/apple-icon-57x57.png',
+        'betty.ca': 'https://betty.ca/favicon/apple-icon-57x57.png'
+    };
+
+    const ClientButton = ({ client, isInactive }: { client: OutlookClient; isInactive?: boolean }) => {
+        const activeCasinos = (client.casinos || '').split(',').filter(c => c.trim() !== '');
+        
+        return (
+            <div
+                key={client.id}
+                onClick={() => onSelectClient(client.id)}
+                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all group cursor-pointer border border-transparent ${
+                    activeClientId === client.id
+                    ? 'bg-blue-600/20 text-blue-100 border-blue-500/30 shadow-lg shadow-blue-900/20 backdrop-blur-sm'
+                    : isInactive
+                        ? 'hover:bg-white/5 text-slate-500 hover:text-slate-300'
+                        : 'hover:bg-white/10 text-slate-400 hover:text-white'
+                    }`}
             >
-                {copiedId === client.id ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                    <Copy className="w-3.5 h-3.5" />
+                <div className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-sm ${
+                    isInactive ? 'bg-slate-700' : client.status === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-amber-500 shadow-amber-500/50'
+                }`} />
+                <span className={`truncate text-sm font-medium flex-1 ${isInactive ? 'opacity-60' : ''}`}>{client.user_email}</span>
+                
+                {activeCasinos.length > 0 && (
+                    <div className="flex -space-x-1 shrink-0 bg-white/5 p-0.5 rounded-lg border border-white/5 mx-1">
+                        {activeCasinos.map(casino => (
+                            <div key={casino} className="w-3.5 h-3.5 rounded-md border border-slate-900 bg-white overflow-hidden shadow-sm flex-shrink-0" title={casino}>
+                                <img src={casinoLogos[casino]} alt={casino} className="w-full h-full object-contain" />
+                            </div>
+                        ))}
+                    </div>
                 )}
-            </button>
-        </div>
-    );
+                
+                <button
+                    onClick={(e) => handleCopyEmail(e, client.user_email, client.id)}
+                    className={`p-1.5 hover:bg-white/10 rounded-lg transition-all shrink-0 ${
+                        activeClientId === client.id 
+                        ? 'opacity-100 text-blue-400' 
+                        : 'opacity-100 md:opacity-0 md:group-hover:opacity-100 text-slate-500 hover:text-white'
+                    }`}
+                    title="Copy email"
+                >
+                    {copiedId === client.id ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                    )}
+                </button>
+            </div>
+        );
+    };
 
     return (
         <>
@@ -112,7 +136,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => onSelectClient(null)}
                     >
-                        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
+                        <div className="bg-linear-to-br from-blue-600 to-indigo-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
                             <Mail className="w-5 h-5 text-white" />
                         </div>
                         <span className="font-bold text-lg tracking-tight font-sans">Outlook<span className="text-blue-500">Mgr</span></span>
@@ -168,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 {"Today's Focus"} ({recentAccounts.length})
                             </div>
                             <nav className="space-y-1 px-3">
-                                {recentAccounts.map((client) => (
+                                {recentAccounts.map((client: OutlookClient) => (
                                     <ClientButton key={client.id} client={client} isInactive={false} />
                                 ))}
                             </nav>
@@ -197,7 +221,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 <nav className="space-y-1 px-3 relative">
                                     {/* Vertical line for hierarchy */}
                                     <div className="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
-                                    {inactiveAccounts.map((client) => (
+                                    {inactiveAccounts.map((client: OutlookClient) => (
                                         <ClientButton key={client.id} client={client} isInactive={true} />
                                     ))}
                                 </nav>
@@ -225,7 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             {showArchived && (
                                 <nav className="space-y-1 px-3 relative">
                                     <div className="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
-                                    {archivedClients.map((client) => (
+                                    {archivedClients.map((client: OutlookClient) => (
                                         <ClientButton key={client.id} client={client} isInactive={true} />
                                     ))}
                                 </nav>
@@ -247,8 +271,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <span className="font-medium text-sm">Settings</span>
                     </button>
                     <div className="mt-2 flex items-center space-x-3 px-3 py-2 rounded-xl bg-white/5 border border-white/5">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-slate-600 flex items-center justify-center text-xs text-white font-bold ring-2 ring-slate-900">
-                            AD
+                        <div className="w-8 h-8 rounded-full bg-linear-to-tr from-slate-700 to-slate-600 flex items-center justify-center text-xs text-white font-bold ring-2 ring-slate-900">
+                             AD
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium text-white truncate">Admin User</div>

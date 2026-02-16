@@ -7,8 +7,11 @@
     "import-accounts": "npx tsx import-accounts.ts"
   },
   "dependencies": {
+    "@prisma/client": "^7.4.0",
+    "@prisma/extension-accelerate": "^1.2.1",
     "dotenv": "^17.2.3",
-    "pg": "^8.17.2"
+    "pg": "^8.17.2",
+    "prisma": "^7.4.0"
   },
   "devDependencies": {
     "@types/node": "^20",

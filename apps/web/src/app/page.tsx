@@ -16,17 +16,17 @@ export default function Home() {
     const [loading, setLoading] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // Load accounts from database on mount
-    useEffect(() => {
-        loadAccounts();
-    }, []);
-
     const loadAccounts = async () => {
         setLoading(true);
         const accounts = await getAllAccounts();
         setClients(accounts);
         setLoading(false);
     };
+
+    // Load accounts from database on mount
+    useEffect(() => {
+        loadAccounts();
+    }, []);
 
     const handleAddClient = async (newClientData: Omit<OutlookClient, 'id' | 'status'>) => {
         const newClient = await createAccount(newClientData);
@@ -85,6 +85,7 @@ export default function Home() {
                     <EmailViewer
                         client={activeClient}
                         onBack={() => handleSelectClient(null)}
+                        onRefresh={loadAccounts}
                     />
                 ) : (
                     <ClientDashboard

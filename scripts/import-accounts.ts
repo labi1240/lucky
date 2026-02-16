@@ -1,14 +1,15 @@
-import 'dotenv/config';
+import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-import pg from 'pg';
 
-const { Pool } = pg;
+dotenv.config({ path: path.join(process.cwd(), '../apps/web/.env') });
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
+import { PrismaClient } from '@prisma/client';
+import { withAccelerate } from '@prisma/extension-accelerate';
+
+const prisma = new PrismaClient({
+    accelerateUrl: process.env.DATABASE_URL
+}).$extends(withAccelerate());
 
 async function importAccounts() {
     const accountsFile = path.join(process.cwd(), 'accounts.txt');
@@ -26,8 +27,6 @@ async function importAccounts() {
     let imported = 0;
     let skipped = 0;
 
-    const client = await pool.connect();
-
     try {
         for (const line of lines) {
             const parts = line.trim().split(':');
@@ -39,29 +38,42 @@ async function importAccounts() {
             const [email, password, refreshToken, clientId] = parts;
 
             try {
-                await client.query(
-                    `INSERT INTO outlook_accounts (id, user_email, client_id, refresh_token, status, last_synced, created_at, updated_at)
-                     VALUES (gen_random_uuid()::text, $1, $2, $3, 'connected', NOW(), NOW(), NOW())
-                     ON CONFLICT (user_email) DO NOTHING`,
-                    [email, clientId, refreshToken]
-                );
+                // @ts-ignore - extensions can sometimes have type lags
+                await prisma.outlookAccount.upsert({
+                    where: { userEmail: email },
+                    update: {
+                        refreshToken,
+                        clientId,
+                        status: 'connected',
+                        updatedAt: new Date()
+                    },
+                    create: {
+                        userEmail: email,
+                        refreshToken,
+                        clientId,
+                        status: 'connected'
+                    }
+                });
 
                 imported++;
-                process.stdout.write(`\r✓ Imported: ${imported} accounts`);
+                process.stdout.write(`\r✓ Processed: ${imported} accounts`);
             } catch (error: any) {
                 console.error(`\n✗ Failed to import ${email}:`, error.message);
                 skipped++;
             }
         }
     } finally {
-        client.release();
+        // Prisma Client extensions don't always expose $disconnect on the extended instance in all versions
+        // but it's generally good practice if available.
+        if ('$disconnect' in prisma) {
+            // @ts-ignore
+            await prisma.$disconnect();
+        }
     }
 
     console.log(`\n\n✅ Import complete!`);
-    console.log(`   Imported: ${imported}`);
+    console.log(`   Processed: ${imported}`);
     console.log(`   Skipped: ${skipped}\n`);
-
-    await pool.end();
 }
 
 importAccounts().catch((err) => {

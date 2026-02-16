@@ -12,20 +12,41 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
     const [formData, setFormData] = useState({
         user_email: '',
         client_id: '',
-        refresh_token: ''
+        refresh_token: '',
+        casinos: ''
     });
 
     const [quickPaste, setQuickPaste] = useState('');
 
+    const casinosMetadata: Record<string, { name: string, logo: string }> = {
+        'luckydays': { name: 'LuckyDays', logo: 'https://luckydays.ca/favicon.ico' },
+        'betty.com': { name: 'Betty.com', logo: 'https://betty.ca/favicon/apple-icon-57x57.png' },
+        'betty.ca': { name: 'Betty.ca', logo: 'https://betty.ca/favicon/apple-icon-57x57.png' }
+    };
+
+    const casinoOptions = Object.keys(casinosMetadata);
+
+    const toggleCasino = (casino: string) => {
+        const currentCasinos = formData.casinos ? formData.casinos.split(',').filter(c => c.trim() !== '') : [];
+        let newCasinos;
+        if (currentCasinos.includes(casino)) {
+            newCasinos = currentCasinos.filter(c => c !== casino);
+        } else {
+            newCasinos = [...currentCasinos, casino];
+        }
+        setFormData({ ...formData, casinos: newCasinos.join(',') });
+    };
+
     const parseAccountString = (str: string) => {
-        // Format: login:password:refresh_token:client_id
+        // Format: login:password:refresh_token:client_id:casinos(optional)
         const parts = str.trim().split(':');
         if (parts.length >= 4) {
-            const [email, _, refreshToken, clientId] = parts;
+            const [email, _, refreshToken, clientId, casinos] = parts;
             setFormData({
                 user_email: email,
                 client_id: clientId,
-                refresh_token: refreshToken
+                refresh_token: refreshToken,
+                casinos: casinos || ''
             });
             setQuickPaste(''); // Clear paste area after successful parse
         }
@@ -44,7 +65,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onAdd(formData);
-        setFormData({ user_email: '', client_id: '', refresh_token: '' });
+        setFormData({ user_email: '', client_id: '', refresh_token: '', casinos: '' });
         onClose();
     };
 
@@ -117,6 +138,33 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
                                 value={formData.refresh_token}
                                 onChange={e => setFormData({ ...formData, refresh_token: e.target.value })}
                             />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Track Casinos</label>
+                        <div className="flex flex-wrap gap-3">
+                            {casinoOptions.map(casino => {
+                                const isSelected = formData.casinos.split(',').includes(casino);
+                                const meta = casinosMetadata[casino];
+                                return (
+                                    <button
+                                        key={casino}
+                                        type="button"
+                                        onClick={() => toggleCasino(casino)}
+                                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all border ${
+                                            isSelected
+                                                ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-sm ring-1 ring-blue-600/20'
+                                                : 'bg-white border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600'
+                                        }`}
+                                    >
+                                        <div className="w-5 h-5 rounded-md overflow-hidden bg-white flex-shrink-0 border border-slate-100">
+                                            <img src={meta.logo} alt={meta.name} className="w-full h-full object-contain" />
+                                        </div>
+                                        <span>{meta.name}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
