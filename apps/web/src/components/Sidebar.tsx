@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { LayoutDashboard, Mail, Plus, Settings, ChevronDown, ChevronRight, Copy, Check, X, Archive } from 'lucide-react';
 import { OutlookClient } from '../app/types';
 
@@ -87,8 +88,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {activeCasinos.length > 0 && (
                     <div className="flex -space-x-1 shrink-0 bg-white/5 p-0.5 rounded-lg border border-white/5 mx-1">
                         {activeCasinos.map(casino => (
-                            <div key={casino} className="w-3.5 h-3.5 rounded-md border border-slate-900 bg-white overflow-hidden shadow-sm flex-shrink-0" title={casino}>
-                                <img src={casinoLogos[casino]} alt={casino} className="w-full h-full object-contain" />
+                            <div key={casino} className="w-3.5 h-3.5 rounded-md border border-slate-900 bg-white overflow-hidden shadow-sm shrink-0 relative" title={casino}>
+                                <Image 
+                                    src={casinoLogos[casino]} 
+                                    alt={casino} 
+                                    fill 
+                                    sizes="14px"
+                                    className="object-contain" 
+                                    unoptimized
+                                />
                             </div>
                         ))}
                     </div>
@@ -271,7 +279,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <span className="font-medium text-sm">Settings</span>
                     </button>
                     <div className="mt-2 flex items-center space-x-3 px-3 py-2 rounded-xl bg-white/5 border border-white/5">
-                        <div className="w-8 h-8 rounded-full bg-linear-to-tr from-slate-700 to-slate-600 flex items-center justify-center text-xs text-white font-bold ring-2 ring-slate-900">
+                        <div className="w-8 h-8 rounded-full bg-linear-to-tr from-slate-700 to-slate-600 flex items-center justify-center text-xs text-white font-bold ring-2 ring-slate-900 shrink-0">
                              AD
                         </div>
                         <div className="flex-1 min-w-0">

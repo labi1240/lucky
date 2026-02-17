@@ -185,8 +185,7 @@ export async function fetchEmails(
 export async function deleteEmail(
     messageId: string,
     clientId: string,
-    refreshToken: string,
-    userEmail: string
+    refreshToken: string
 ): Promise<DeleteEmailResponse> {
     // Get access token
     const { token: accessToken, error: tokenError } = await getAccessToken(clientId, refreshToken);

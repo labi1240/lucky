@@ -24,6 +24,11 @@ interface UseCachedEmailsReturn {
     clearCache: () => Promise<void>;
 }
 
+interface FetchEmailsResponse {
+    emails?: EmailMessage[];
+    error?: string;
+}
+
 export function useCachedEmails({
     clientId,
     refreshToken,
@@ -57,14 +62,14 @@ export function useCachedEmails({
     // Fetch emails from network
     const fetchFromNetwork = useCallback(async (): Promise<EmailMessage[] | null> => {
         try {
-            const data: any = await fetchEmailsAction(clientId, refreshToken, userEmail, accountId);
+            const data = await fetchEmailsAction(clientId, refreshToken, userEmail, accountId) as FetchEmailsResponse;
 
             if (data.error) {
                 throw new Error(data.error);
             }
 
-            const results = data.emails || (Array.isArray(data) ? data : [data]);
-            const formatted = results.map((e: any, idx: number) => ({
+            const results = data.emails || [];
+            const formatted = results.map((e: EmailMessage, idx: number) => ({
                 ...e,
                 id: e.id || `msg-${Date.now()}-${idx}`,
                 isRead: false
@@ -74,7 +79,7 @@ export function useCachedEmails({
             await cacheEmails(accountId, formatted);
 
             return formatted;
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Network fetch failed:', err);
             return null;
         }

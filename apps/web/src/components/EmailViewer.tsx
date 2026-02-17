@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { OutlookClient, EmailMessage } from '../app/types';
 import { Search, RotateCw, Trash2, ArrowLeft, Paperclip, WifiOff, Clock, Database, Copy, Check } from 'lucide-react';
 import { deleteEmail as deleteEmailAction } from '../app/actions/emailActions';
@@ -27,7 +28,7 @@ const getPreviewText = (html: string) => {
         const styles = doc.querySelectorAll('style, script, link, meta');
         styles.forEach(el => el.remove());
         return doc.body.textContent || doc.body.innerText || '';
-    } catch (e) {
+    } catch {
         // Fallback for SSR or error
         return html.replace(/<[^>]*>/g, '');
     }
@@ -85,7 +86,12 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack, onRefr
     }, [emails, selectedEmail]);
 
     const handleDelete = async () => {
-        if (!selectedEmail?.original_object?.id) {
+        if (!selectedEmail) return;
+
+        const originalObj = selectedEmail.original_object as Record<string, unknown>;
+        const messageId = originalObj?.id as string | undefined;
+
+        if (!messageId) {
             alert('Cannot delete: Email ID not found');
             return;
         }
@@ -101,11 +107,10 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack, onRefr
 
         setDeleting(true);
         try {
-            const result: any = await deleteEmailAction(
-                selectedEmail.original_object.id,
+            const result = await deleteEmailAction(
+                messageId,
                 client.client_id,
-                client.refresh_token,
-                client.user_email
+                client.refresh_token
             );
 
             if (result.success) {
@@ -115,8 +120,8 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack, onRefr
             } else {
                 alert(`Delete failed: ${result.error}`);
             }
-        } catch (e: any) {
-            alert(`Delete error: ${e.message}`);
+        } catch (e: unknown) {
+            alert(`Delete error: ${e instanceof Error ? e.message : 'Unknown error'}`);
         } finally {
             setDeleting(false);
         }
@@ -148,7 +153,7 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack, onRefr
                     {isOffline ? (
                         <>
                             <WifiOff className="w-3 h-3" />
-                            <span>You're offline - showing cached emails</span>
+                            <span>You&apos;re offline - showing cached emails</span>
                         </>
                     ) : (
                         <>
@@ -206,8 +211,15 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({ client, onBack, onRefr
                                         }}
                                         title={`Mark for ${casino.name}`}
                                     >
-                                        <div className={`w-5 h-5 overflow-hidden rounded ${isSelected ? '' : 'grayscale opacity-70'}`}>
-                                            <img src={casino.logo} alt={casino.name} className="w-full h-full object-contain" />
+                                        <div className={`w-5 h-5 overflow-hidden rounded shrink-0 relative ${isSelected ? '' : 'grayscale opacity-70'}`}>
+                                            <Image 
+                                                src={casino.logo} 
+                                                alt={casino.name} 
+                                                fill 
+                                                sizes="20px"
+                                                className="object-contain" 
+                                                unoptimized
+                                            />
                                         </div>
                                     </button>
                                 );

@@ -15,7 +15,7 @@ interface EmailCacheDB extends DBSchema {
         key: string;
         value: {
             key: string;
-            value: any;
+            value: unknown;
         };
     };
 }

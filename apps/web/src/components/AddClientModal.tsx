@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { X, Lock, Mail, Key } from 'lucide-react';
 import { OutlookClient } from '../app/types';
 
@@ -41,7 +42,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
         // Format: login:password:refresh_token:client_id:casinos(optional)
         const parts = str.trim().split(':');
         if (parts.length >= 4) {
-            const [email, _, refreshToken, clientId, casinos] = parts;
+            const [email, , refreshToken, clientId, casinos] = parts;
             setFormData({
                 user_email: email,
                 client_id: clientId,
@@ -158,8 +159,15 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
                                                 : 'bg-white border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600'
                                         }`}
                                     >
-                                        <div className="w-5 h-5 rounded-md overflow-hidden bg-white flex-shrink-0 border border-slate-100">
-                                            <img src={meta.logo} alt={meta.name} className="w-full h-full object-contain" />
+                                        <div className="w-5 h-5 rounded-md overflow-hidden bg-white shrink-0 border border-slate-100 relative">
+                                            <Image 
+                                                src={meta.logo} 
+                                                alt={meta.name} 
+                                                fill 
+                                                sizes="20px"
+                                                className="object-contain" 
+                                                unoptimized
+                                            />
                                         </div>
                                         <span>{meta.name}</span>
                                     </button>

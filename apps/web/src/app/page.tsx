@@ -25,7 +25,10 @@ export default function Home() {
 
     // Load accounts from database on mount
     useEffect(() => {
-        loadAccounts();
+        const init = async () => {
+            await loadAccounts();
+        };
+        init();
     }, []);
 
     const handleAddClient = async (newClientData: Omit<OutlookClient, 'id' | 'status'>) => {

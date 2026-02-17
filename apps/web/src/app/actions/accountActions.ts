@@ -4,10 +4,23 @@ import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { OutlookClient } from '../types';
 
+interface RawAccount {
+    id: string;
+    user_email: string;
+    client_id: string;
+    refresh_token: string;
+    status: string;
+    last_synced: string;
+    last_accessed: string | null;
+    is_favorite: boolean;
+    is_archived: boolean;
+    casinos: string | null;
+}
+
 export async function getAllAccounts(): Promise<OutlookClient[]> {
     try {
         // Use raw query to ensure we get ALL columns even if the client is stale
-        const accounts = await prisma.$queryRaw<any[]>`
+        const accounts = await prisma.$queryRaw<RawAccount[]>`
             SELECT 
                 id, 
                 user_email, 
@@ -32,9 +45,9 @@ export async function getAllAccounts(): Promise<OutlookClient[]> {
             user_email: acc.user_email,
             client_id: acc.client_id,
             refresh_token: acc.refresh_token,
-            status: acc.status as any,
+            status: acc.status as 'connected' | 'error' | 'syncing',
             last_synced: acc.last_synced,
-            last_accessed: acc.last_accessed,
+            last_accessed: acc.last_accessed ?? undefined,
             is_favorite: acc.is_favorite,
             is_archived: acc.is_archived,
             casinos: acc.casinos || ""
@@ -126,7 +139,7 @@ export async function toggleCasino(id: string, casinoName: string): Promise<void
     
     try {
         // Use raw query for selection to ensure we get the casinos column even if the client is stale
-        const results = await prisma.$queryRaw<any[]>`SELECT casinos FROM outlook_accounts WHERE id = ${id}`;
+        const results = await prisma.$queryRaw<{ casinos: string | null }[]>`SELECT casinos FROM outlook_accounts WHERE id = ${id}`;
 
         if (!results || results.length === 0) {
             console.error(`Account not found for ID: ${id}`);
@@ -134,7 +147,8 @@ export async function toggleCasino(id: string, casinoName: string): Promise<void
         }
 
         const account = results[0];
-        let casinos = (account.casinos || "").split(',').filter((c: string) => c.trim() !== '');
+        const currentCasinos = account.casinos || "";
+        let casinos = currentCasinos.split(',').filter((c: string) => c.trim() !== '');
         
         if (casinos.includes(casinoName)) {
             casinos = casinos.filter((c: string) => c !== casinoName);
@@ -149,7 +163,7 @@ export async function toggleCasino(id: string, casinoName: string): Promise<void
         
         // Revalidate the path to clear any server-side caches
         revalidatePath('/');
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error in toggleCasino:', error);
         throw error;
     }

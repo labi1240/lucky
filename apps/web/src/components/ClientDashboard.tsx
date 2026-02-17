@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { OutlookClient } from '../app/types';
 import { RefreshCw, AlertCircle, CheckCircle, Plus, Clock, Star, Archive, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
 import { toggleFavorite, toggleArchive, toggleCasino } from '../app/actions/accountActions';
@@ -127,8 +128,15 @@ const ClientCard = ({
                             }}
                             title={`Toggle ${casino.name} tracking`}
                         >
-                            <div className={`w-3.5 h-3.5 md:w-4 md:h-4 rounded-md overflow-hidden bg-white flex-shrink-0 ${isSelected ? '' : 'grayscale opacity-60'}`}>
-                                <img src={casino.logo} alt={casino.name} className="w-full h-full object-contain" />
+                            <div className={`w-3.5 h-3.5 md:w-4 md:h-4 rounded-md overflow-hidden bg-white shrink-0 relative ${isSelected ? '' : 'grayscale opacity-60'}`}>
+                                <Image 
+                                    src={casino.logo} 
+                                    alt={casino.name} 
+                                    fill 
+                                    sizes="(max-width: 768px) 14px, 16px"
+                                    className="object-contain" 
+                                    unoptimized
+                                />
                             </div>
                             <span className="text-[9px] md:text-[11px] font-bold uppercase tracking-tight">
                                 {casino.name.split('.')[0]}

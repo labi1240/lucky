@@ -18,8 +18,8 @@ export interface EmailMessage {
     subject: string;
     date: string;
     body: string;
-    attachments: any[];
-    original_object?: any;
+    attachments: unknown[];
+    original_object?: unknown;
     isRead?: boolean;
 }
 

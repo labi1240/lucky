@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  distDir: '../../.next',
 };
 
 export default nextConfig;
