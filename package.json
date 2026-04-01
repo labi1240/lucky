@@ -11,5 +11,15 @@
     "build": "npm run build --workspace=apps/web",
     "start": "npm run start --workspace=apps/web",
     "lint": "npm run lint --workspace=apps/web"
+  },
+  "devDependencies": {
+    "@types/mailparser": "^3.4.6",
+    "playwright": "^1.58.2"
+  },
+  "dependencies": {
+    "imapflow": "^1.2.13",
+    "mailparser": "^3.9.4",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }

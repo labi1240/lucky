@@ -47,10 +47,6 @@ interface GraphMessage {
     hasAttachments: boolean;
 }
 
-interface MailFolder {
-    id: string;
-    displayName: string;
-}
 
 /**
  * Get access token from refresh token
@@ -62,7 +58,7 @@ async function getAccessToken(clientId: string, refreshToken: string): Promise<{
         client_id: clientId,
         refresh_token: refreshToken,
         grant_type: 'refresh_token',
-        scope: 'https://graph.microsoft.com/.default'
+        scope: 'https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.ReadWrite offline_access'
     });
 
     try {
@@ -109,8 +105,9 @@ async function fetchMessagesFromFolder(accessToken: string, folderName: string):
         });
 
         if (!response.ok) {
-            console.error(`Error fetching from ${folderName}: ${response.statusText}`);
-            return [];
+            const errorText = await response.text();
+            console.error(`Error fetching from ${folderName}: ${response.status} ${errorText}`);
+            throw new Error(`Graph API error (${response.status}) fetching ${folderName}: ${errorText || response.statusText}`);
         }
 
         const data = await response.json();
@@ -195,33 +192,8 @@ export async function deleteEmail(
     }
 
     try {
-        // Get mail folders to find Deleted Items
-        const foldersUrl = 'https://graph.microsoft.com/v1.0/me/mailFolders';
-        const foldersResponse = await fetch(foldersUrl, {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!foldersResponse.ok) {
-            const errorText = await foldersResponse.text();
-            return { success: false, error: `Could not get folders: ${errorText}` };
-        }
-
-        const foldersData = await foldersResponse.json();
-        const folders: MailFolder[] = foldersData.value || [];
-
-        // Find Deleted Items or Trash folder
-        const deletedItemsFolder = folders.find(
-            (folder) => folder.displayName === 'Deleted Items' || folder.displayName === 'Trash'
-        );
-
-        if (!deletedItemsFolder) {
-            return { success: false, error: 'Could not find Deleted Items folder' };
-        }
-
-        // Move the message to Deleted Items
+        // Use well-known folder name 'deleteditems' to move message to trash
+        // This is more robust than looking up by display name which varies by locale
         const moveUrl = `https://graph.microsoft.com/v1.0/me/messages/${messageId}/move`;
         const moveResponse = await fetch(moveUrl, {
             method: 'POST',
@@ -230,7 +202,7 @@ export async function deleteEmail(
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                destinationId: deletedItemsFolder.id
+                destinationId: 'deleteditems'
             })
         });
 

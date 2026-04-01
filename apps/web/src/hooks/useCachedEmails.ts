@@ -80,7 +80,9 @@ export function useCachedEmails({
 
             return formatted;
         } catch (err: unknown) {
-            console.error('Network fetch failed:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Unknown network error';
+            console.error('Network fetch failed:', errorMessage);
+            setError(errorMessage);
             return null;
         }
     }, [clientId, refreshToken, userEmail, accountId]);

@@ -38,7 +38,7 @@ export async function getAllAccounts(): Promise<OutlookClient[]> {
             WHERE is_archived = false
             ORDER BY user_email ASC
         `;
-        
+
         // Map snake_case database columns back to properties matching OutlookClient interface
         return accounts.map(acc => ({
             id: acc.id,
@@ -136,7 +136,7 @@ export async function toggleCasino(id: string, casinoName: string): Promise<void
     if (!id || typeof id !== 'string') {
         return;
     }
-    
+
     try {
         // Use raw query for selection to ensure we get the casinos column even if the client is stale
         const results = await prisma.$queryRaw<{ casinos: string | null }[]>`SELECT casinos FROM outlook_accounts WHERE id = ${id}`;
@@ -149,7 +149,7 @@ export async function toggleCasino(id: string, casinoName: string): Promise<void
         const account = results[0];
         const currentCasinos = account.casinos || "";
         let casinos = currentCasinos.split(',').filter((c: string) => c.trim() !== '');
-        
+
         if (casinos.includes(casinoName)) {
             casinos = casinos.filter((c: string) => c !== casinoName);
         } else {
@@ -157,10 +157,10 @@ export async function toggleCasino(id: string, casinoName: string): Promise<void
         }
 
         const updatedCasinos = casinos.join(',');
-        
+
         // Use raw query for update
         await prisma.$executeRaw`UPDATE outlook_accounts SET casinos = ${updatedCasinos} WHERE id = ${id}`;
-        
+
         // Revalidate the path to clear any server-side caches
         revalidatePath('/');
     } catch (error: unknown) {
